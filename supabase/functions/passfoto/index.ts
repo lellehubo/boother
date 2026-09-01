@@ -83,20 +83,21 @@ async function pickAnimal(seed: number): Promise<string | null> {
   }
 }
 
-// Bygger djur-prompten. Tom art (om valet misslyckas) → låt bildmodellen välja själv.
+// Bygger djur-prompten. Viktigt: be modellen SKAPA en påhittad djurkaraktär
+// inspirerad av selfien — inte "förvandla personen", vilket blockeras (blockReason OTHER).
+// Tom art (om valet misslyckas) → låt bildmodellen välja djur själv.
 function animalPrompt(species: string): string {
-  const who = species
-    ? "en antropomorf " + species
-    : "ett oväntat djur (inte katt eller hund)";
+  const kind = species || "ett oväntat djur (inte katt eller hund)";
   return (
-    "Förvandla personen på bilden till " + who + " och gör ett passfoto taget i studio. " +
-    "Behåll personens uttryck, hållning och 'vibe', frisyren översatt till päls eller fjädrar, " +
-    "hår- och ögonfärg, samt glasögon om sådana finns — så att djuret känns som just DEN här personen. " +
-    "Djuret sitter upprätt i ett fotobås, huvudet rakt framifrån, neutralt uttryck, axlarna raka, " +
-    "båda ögonen öppna. Byt bakgrunden till en jämn ljusgrå yta utan struktur och utan slagskuggor. " +
-    "Mjuk, jämn studiobelysning framifrån, inga hårda skuggor. Beskär till stående passfotoformat med " +
-    "huvudet centrerat och ungefär tre fjärdedelar av bildhöjden från hakan till hjässan. " +
-    "Fotorealistisk päls-/fjäderdetalj, elegant men lätt absurt — ett på riktigt seriöst passfoto på ett djur. "
+    "Skapa ett humoristiskt men proffsigt passfoto taget i studio av en PÅHITTAD, fiktiv " +
+    "antropomorf djurkaraktär i form av " + kind + ". Det ska INTE föreställa en verklig person — " +
+    "hitta på en helt ny karaktär. Använd referensbilden enbart som stilinspiration: liknande " +
+    "frisyr översatt till päls eller fjädrar, liknande hår- och ögonfärg, glasögon om sådana finns, " +
+    "och samma lugna, neutrala uttryck och 'vibe'. Karaktären sitter upprätt i ett fotobås, huvudet " +
+    "rakt framifrån, neutralt uttryck, axlarna raka, båda ögonen öppna och synliga. Jämn ljusgrå " +
+    "studiobakgrund utan struktur och utan slagskuggor. Mjuk, jämn belysning framifrån, inga hårda " +
+    "skuggor. Stående passfotoformat med huvudet centrerat och ungefär tre fjärdedelar av bildhöjden " +
+    "från hakan till hjässan. Fotorealistisk päls-/fjäderdetalj, elegant men lätt absurt. "
   );
 }
 
