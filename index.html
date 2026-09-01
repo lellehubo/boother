@@ -366,7 +366,8 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
 [data-state="result"] .lever-wrap::before { animation: halo 2.2s ease-out infinite; }
 
 .lever { position: relative; width: 64px; height: 108px; padding: 0;
-  border: none; background: none; cursor: pointer; }
+  border: none; background: none; cursor: grab; touch-action: none; }
+.lever.dragging { cursor: grabbing; }
 /* Spår i mörk mässing */
 .lever-slot { position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
   width: 20px; height: 90px; border-radius: 11px;
@@ -389,8 +390,8 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
   opacity: calc(var(--lamp) * 0.7); transition: opacity 150ms ease; }
 [data-state="result"] .lever-knob { animation: knobBob 1.9s ease-in-out infinite; }
 @keyframes knobBob { 0%,100% { top: 2px; } 50% { top: 9px; } }
-.lever:active .lever-knob { transform: translateX(-50%) scale(0.96); }
-.lever.pulled .lever-knob { top: 54px; animation: none; }
+/* Under drag: knoppen följer fingret direkt, ingen bob/transition som slåss */
+.lever.dragging .lever-knob { animation: none; transition: none; }
 
 /* Reel-läsare i lampan medan djuret framkallas (enarmad bandit) */
 .lamp-count.reeling { opacity: 1; letter-spacing: 0; text-indent: 0; font-size: 22px; }
@@ -614,6 +615,7 @@ const video   = document.getElementById("video");
 const frozen  = document.getElementById("frozen");
 const trigger = document.getElementById("trigger");
 const lever   = document.getElementById("lever");
+const leverKnob = lever.querySelector(".lever-knob");
 const lampCount = document.getElementById("lampCount");
 const flash   = document.getElementById("flash");
 const strip   = document.getElementById("strip");
@@ -890,10 +892,9 @@ async function runAnimalSequence() {
   if (busy || !lastCapture) return;
   busy = true; trigger.disabled = true; lever.disabled = true;
   clearError();
-  lever.classList.add("pulled");           // dra ner spaken
   haptic(30); shutter();
   setLamp(1);
-  await sleep(360);                         // låt knoppen åka ner innan framkallning
+  await sleep(180);                         // kort beat efter draget
   setState(STATES.PROCESSING);
   startReel();
   try {
@@ -907,12 +908,49 @@ async function runAnimalSequence() {
     body.classList.remove("develop-error"); void body.offsetWidth; body.classList.add("develop-error");
   } finally {
     busy = false; trigger.disabled = false; lever.disabled = false;
-    lever.classList.remove("pulled");
+    leverKnob.style.top = "";               // släpp tillbaka knoppen till toppen
     setLamp(0.25);
   }
 }
 
-lever.addEventListener("click", () => { ensureAudio(); runAnimalSequence(); });
+/* Dra-gest: knoppen följer fingret; förbi tröskeln löser den ut, annars fjädrar den tillbaka. */
+const KNOB_TRAVEL = 46;      // px knoppen kan dras ner i spåret
+const PULL_THRESHOLD = 32;   // så långt måste man dra för att lösa ut
+let dragging = false, dragStartY = 0, dragDelta = 0, passedThreshold = false;
+
+function setKnob(px) { leverKnob.style.top = (2 + px) + "px"; }
+
+lever.addEventListener("pointerdown", (e) => {
+  if (busy || !lastCapture) return;
+  ensureAudio();
+  dragging = true; dragStartY = e.clientY; dragDelta = 0; passedThreshold = false;
+  lever.classList.add("dragging");
+  try { lever.setPointerCapture(e.pointerId); } catch (_) {}
+  e.preventDefault();
+});
+lever.addEventListener("pointermove", (e) => {
+  if (!dragging) return;
+  dragDelta = Math.max(0, Math.min(KNOB_TRAVEL, e.clientY - dragStartY));
+  setKnob(dragDelta);
+  const past = dragDelta >= PULL_THRESHOLD;
+  if (past && !passedThreshold) { passedThreshold = true; haptic(12); tick(); }
+  else if (!past && passedThreshold) { passedThreshold = false; }
+});
+function endDrag(e) {
+  if (!dragging) return;
+  dragging = false;
+  lever.classList.remove("dragging");
+  try { lever.releasePointerCapture(e.pointerId); } catch (_) {}
+  if (dragDelta >= PULL_THRESHOLD) { setKnob(KNOB_TRAVEL); runAnimalSequence(); }
+  else { leverKnob.style.top = ""; }        // för kort drag → fjädra tillbaka
+  dragDelta = 0;
+}
+lever.addEventListener("pointerup", endDrag);
+lever.addEventListener("pointercancel", endDrag);
+/* Tillgänglighet: Enter/mellanslag drar spaken */
+lever.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ensureAudio(); runAnimalSequence(); }
+});
 
 /* ============================================================
    Knapplogik
