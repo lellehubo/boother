@@ -41,6 +41,65 @@ const VARIANTS = [
   "Ljussättning: aningen varmare ljus, som en glödlampa dämpad mot dagsljus.",
 ];
 
+// ── Djur-läge ────────────────────────────────────────────────
+// Ingen hårdkodad djurlista: en snabb textmodell väljer arten, och ett
+// slumpfrö från klienten + hög temperatur ger en ny art varje gång.
+const TEXT_MODEL = "gemini-flash-latest";
+const TEXT_ENDPOINT =
+  `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent`;
+
+async function pickAnimal(seed: number): Promise<string | null> {
+  try {
+    const res = await fetch(TEXT_ENDPOINT, {
+      method: "POST",
+      headers: { "x-goog-api-key": GEMINI_API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          role: "user",
+          parts: [{
+            text:
+              "Välj EN slumpmässig djurart från hela djurriket — däggdjur, fågel, reptil, " +
+              "groddjur, fisk, havsdjur, insekt eller spindeldjur. Undvik vanliga husdjur " +
+              "(ingen katt, hund, kanin) och undvik de självklara valen räv och uggla. " +
+              "Var oväntad och variera brett. Svara med ENBART artens namn på svenska, " +
+              "gemener, inga andra ord. Slumpfrö: " + seed,
+          }],
+        }],
+        generationConfig: { temperature: 1.6, maxOutputTokens: 24 },
+      }),
+    });
+    if (!res.ok) {
+      console.error("animal_pick_error", res.status, (await res.text()).slice(0, 200));
+      return null;
+    }
+    const data = await res.json();
+    const txt = (data?.candidates?.[0]?.content?.parts ?? [])
+      .map((p: { text?: string }) => p.text ?? "").join("").trim();
+    if (!txt) return null;
+    return txt.replace(/["'.\n]/g, "").slice(0, 40).toLowerCase();
+  } catch (err) {
+    console.error("animal_pick_exception", String(err));
+    return null;
+  }
+}
+
+// Bygger djur-prompten. Tom art (om valet misslyckas) → låt bildmodellen välja själv.
+function animalPrompt(species: string): string {
+  const who = species
+    ? "en antropomorf " + species
+    : "ett oväntat djur (inte katt eller hund)";
+  return (
+    "Förvandla personen på bilden till " + who + " och gör ett passfoto taget i studio. " +
+    "Behåll personens uttryck, hållning och 'vibe', frisyren översatt till päls eller fjädrar, " +
+    "hår- och ögonfärg, samt glasögon om sådana finns — så att djuret känns som just DEN här personen. " +
+    "Djuret sitter upprätt i ett fotobås, huvudet rakt framifrån, neutralt uttryck, axlarna raka, " +
+    "båda ögonen öppna. Byt bakgrunden till en jämn ljusgrå yta utan struktur och utan slagskuggor. " +
+    "Mjuk, jämn studiobelysning framifrån, inga hårda skuggor. Beskär till stående passfotoformat med " +
+    "huvudet centrerat och ungefär tre fjärdedelar av bildhöjden från hakan till hjässan. " +
+    "Fotorealistisk päls-/fjäderdetalj, elegant men lätt absurt — ett på riktigt seriöst passfoto på ett djur. "
+  );
+}
+
 // Enkel in-memory rate limit. Räcker för en instans; nollställs vid cold start.
 const hits = new Map<string, number[]>();
 
@@ -75,7 +134,7 @@ function rateLimited(ip: string): boolean {
 }
 
 // Ett anrop till Gemini. Returnerar en komplett data-URL (rätt mime) eller null.
-async function generateOne(imageB64: string, variant: string): Promise<string | null> {
+async function generateOne(imageB64: string, prompt: string): Promise<string | null> {
   try {
     const res = await fetch(ENDPOINT, {
       method: "POST",
@@ -88,7 +147,7 @@ async function generateOne(imageB64: string, variant: string): Promise<string | 
           role: "user",
           parts: [
             { inline_data: { mime_type: "image/jpeg", data: imageB64 } },
-            { text: BASE_PROMPT + variant },
+            { text: prompt },
           ],
         }],
         // responseModalities måste anges explicit, annars kan modellen svara
@@ -134,17 +193,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (len > MAX_BODY_BYTES) return json({ error: "payload_too_large" }, 413, origin);
 
   let image: string;
+  let mode = "passport";
+  let seed = 0;
   try {
     const body = await req.json();
     image = String(body.image ?? "");
+    if (body.mode === "animal") mode = "animal";
+    seed = Number(body.seed) || 0;
   } catch {
     return json({ error: "bad_request" }, 400, origin);
   }
   if (!image || image.length < 100) return json({ error: "no_image" }, 400, origin);
   if (image.length > MAX_BODY_BYTES) return json({ error: "payload_too_large" }, 413, origin);
 
+  // Passfoto = fast basprompt. Djur = slumpad art via textmodellen, samma art på alla fyra.
+  const base = mode === "animal" ? animalPrompt(await pickAnimal(seed) ?? "") : BASE_PROMPT;
+
   // Fyra parallella anrop — ett misslyckat får inte fälla hela remsan.
-  const results = await Promise.all(VARIANTS.map((v) => generateOne(image, v)));
+  const results = await Promise.all(VARIANTS.map((v) => generateOne(image, base + v)));
   const images = results.filter((b): b is string => b !== null);
 
   if (images.length === 0) return json({ error: "generation_failed" }, 502, origin);

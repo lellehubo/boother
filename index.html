@@ -351,6 +351,51 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
 [data-state="result"]     .trigger .ic-retake { display: block; }
 
 /* ============================================================
+   DJUR-SPAKEN — mässingsarm som dyker upp efter leverans
+   ============================================================ */
+.lever-wrap { position: relative; z-index: 3; margin-top: 14px;
+  display: none; justify-content: center; }
+[data-state="result"] .lever-wrap { display: flex; animation: leverIn .5s var(--ease) .35s backwards; }
+@keyframes leverIn { from { opacity: 0; transform: translateY(-12px); } }
+/* Lockande halo, samma familj som utlösarens */
+.lever-wrap::before {
+  content: ""; position: absolute; top: 30px; left: 50%; width: 74px; height: 74px;
+  border-radius: 50%; transform: translate(-50%,-50%);
+  border: 2px solid var(--teak-hi); opacity: 0; pointer-events: none;
+}
+[data-state="result"] .lever-wrap::before { animation: halo 2.2s ease-out infinite; }
+
+.lever { position: relative; width: 64px; height: 108px; padding: 0;
+  border: none; background: none; cursor: pointer; }
+/* Spår i mörk mässing */
+.lever-slot { position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
+  width: 20px; height: 90px; border-radius: 11px;
+  background: linear-gradient(180deg, #34240f, #1c1207);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.75),
+    0 0 0 6px #b07d3e, 0 0 0 7px var(--teak-mid), 0 6px 13px rgba(0,0,0,0.5); }
+/* Knopp i borstad mässing/amber — speglar lampan via --lamp */
+.lever-knob { position: absolute; left: 50%; top: 2px; transform: translateX(-50%);
+  width: 52px; height: 52px; border-radius: 50%; color: #3a2410;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(circle at 40% 28%, #fff0d4, var(--teak-hi) 38%, var(--teak-light) 66%, var(--teak) 100%);
+  box-shadow: inset 0 3px 4px rgba(255,244,224,0.7), inset 0 -7px 11px rgba(46,26,12,0.5),
+    0 7px 13px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.4);
+  transition: top .45s var(--ease), transform .1s; }
+.lever-knob svg { width: 26px; height: 26px; filter: drop-shadow(0 1px 0 rgba(255,255,255,0.4)); }
+.lever-knob::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  pointer-events: none; mix-blend-mode: screen;
+  background: radial-gradient(circle at 50% 20%, rgba(255,229,180,0.85), transparent 46%);
+  opacity: calc(var(--lamp) * 0.7); transition: opacity 150ms ease; }
+[data-state="result"] .lever-knob { animation: knobBob 1.9s ease-in-out infinite; }
+@keyframes knobBob { 0%,100% { top: 2px; } 50% { top: 9px; } }
+.lever:active .lever-knob { transform: translateX(-50%) scale(0.96); }
+.lever.pulled .lever-knob { top: 54px; animation: none; }
+
+/* Reel-läsare i lampan medan djuret framkallas (enarmad bandit) */
+.lamp-count.reeling { opacity: 1; letter-spacing: 0; text-indent: 0; font-size: 22px; }
+
+/* ============================================================
    FOTOREMSAN — glansigt fotopapper som glider fram
    ============================================================ */
 
@@ -460,6 +505,8 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
   .booth { animation: none !important; transform: none; opacity: 1; }
   .lamp-boot, .idle-face .cue, .scanline, .guide,
   [data-state="idle"] .trigger-wrap::before,
+  [data-state="result"] .lever-wrap, [data-state="result"] .lever-wrap::before,
+  [data-state="result"] .lever-knob,
   .strip, .strip figure, .lb-inner { animation: none !important; }
 }
 </style>
@@ -514,6 +561,20 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
       </button>
     </div>
 
+    <!-- Djur-spaken: dra ner för ett slumpat djur-passfoto (endast i result) -->
+    <div class="lever-wrap">
+      <button class="lever" id="lever" aria-label="Slumpa ditt djur-passfoto">
+        <span class="lever-slot"></span>
+        <span class="lever-knob">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="6.5" cy="9" r="1.9"/><circle cx="11" cy="6.5" r="2"/>
+            <circle cx="15.5" cy="7.5" r="1.9"/><circle cx="18.5" cy="11" r="1.7"/>
+            <path d="M12 12.5c-3 0-5.4 2.1-5.4 4.4C6.6 18.8 8.7 19.5 12 19.5s5.4-.7 5.4-2.6C17.4 14.6 15 12.5 12 12.5z"/>
+          </svg>
+        </span>
+      </button>
+    </div>
+
     <svg class="maker" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
       <circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/>
     </svg>
@@ -552,6 +613,7 @@ const body    = document.body;
 const video   = document.getElementById("video");
 const frozen  = document.getElementById("frozen");
 const trigger = document.getElementById("trigger");
+const lever   = document.getElementById("lever");
 const lampCount = document.getElementById("lampCount");
 const flash   = document.getElementById("flash");
 const strip   = document.getElementById("strip");
@@ -565,6 +627,7 @@ const lbDownload  = document.getElementById("lbDownload");
 let stream = null;
 let busy = false;
 let currentLb = null;
+let lastCapture = null;   // senaste selfien, återanvänds av djur-spaken
 
 function setState(s) { body.setAttribute("data-state", s); }
 function setLamp(v) { document.documentElement.style.setProperty("--lamp", String(v)); }
@@ -678,6 +741,7 @@ async function runSequence() {
   flash.classList.remove("fire"); void flash.offsetWidth; flash.classList.add("fire");
   shutter(); haptic(35);
   const dataUrl = capture();
+  lastCapture = dataUrl;
   await sleep(180);
   setLamp(0.25);
 
@@ -699,18 +763,19 @@ async function runSequence() {
 /* ============================================================
    Proxy
    ============================================================ */
-async function develop(jpegDataUrl) {
+async function develop(jpegDataUrl, mode = "passport") {
   const base64 = jpegDataUrl.split(",")[1];
   if (!PROXY_URL) return [{ ok:true, url:jpegDataUrl }, { ok:false }, { ok:false }, { ok:false }];
 
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 90000);
+  const timer = setTimeout(() => ctrl.abort(), 120000);
+  const seed = Math.floor(Math.random() * 1e9);
   let res;
   try {
     res = await fetch(PROXY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: base64 }),
+      body: JSON.stringify({ image: base64, mode, seed }),
       signal: ctrl.signal
     });
   } finally { clearTimeout(timer); }
@@ -804,6 +869,50 @@ lightbox.addEventListener("click", (e) => { if (e.target === lightbox) closeLigh
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && lightbox.classList.contains("open")) closeLightbox();
 });
+
+/* ============================================================
+   Djur-spaken — slumpat djur-passfoto av samma selfie
+   ============================================================ */
+const REEL = ["🦊","🦉","🐙","🦎","🐡","🦥","🦩","🐢","🦇","🦆","🐗","🦦","🐊","🦚","🐝","🦕"];
+let reelTimer = null;
+function startReel() {
+  let i = 0;
+  lampCount.classList.add("reeling");
+  reelTimer = setInterval(() => { lampCount.textContent = REEL[i++ % REEL.length]; }, 120);
+}
+function stopReel() {
+  if (reelTimer) { clearInterval(reelTimer); reelTimer = null; }
+  lampCount.classList.remove("reeling");
+  lampCount.textContent = "3";
+}
+
+async function runAnimalSequence() {
+  if (busy || !lastCapture) return;
+  busy = true; trigger.disabled = true; lever.disabled = true;
+  clearError();
+  lever.classList.add("pulled");           // dra ner spaken
+  haptic(30); shutter();
+  setLamp(1);
+  await sleep(360);                         // låt knoppen åka ner innan framkallning
+  setState(STATES.PROCESSING);
+  startReel();
+  try {
+    const images = await develop(lastCapture, "animal");
+    stopReel();
+    showResults(images, lastCapture);
+  } catch (err) {
+    stopReel();
+    setState(STATES.RESULT);
+    haptic([40, 60, 40]);
+    body.classList.remove("develop-error"); void body.offsetWidth; body.classList.add("develop-error");
+  } finally {
+    busy = false; trigger.disabled = false; lever.disabled = false;
+    lever.classList.remove("pulled");
+    setLamp(0.25);
+  }
+}
+
+lever.addEventListener("click", () => { ensureAudio(); runAnimalSequence(); });
 
 /* ============================================================
    Knapplogik

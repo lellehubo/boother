@@ -83,8 +83,16 @@ be Claude deploya om via MCP.
 - Retuscherade/AI-behandlade foton godtas inte av alla myndigheter. Svenska pass
   fotograferas hos polisen — appen passar bäst för visum, medlemskort o.d.
 
+## Djur-läge (mässingsspaken)
+
+Efter leverans dyker en mässingsspak upp under utlösaren. Dra ner den så skickas
+samma selfie till proxyn med `mode:"animal"`: en textmodell (`gemini-flash-latest`)
+slumpar en djurart — inget hårdkodat bibliotek, ett slumpfrö + hög temperatur ger
+ny art varje gång — och bildmodellen gör fyra passfoton av dig som det djuret. Dra
+igen för att slå om (re-roll). Misslyckas artvalet får bildmodellen välja själv.
+
 ## Att bestämma (redan valt)
 
 - Remsan sparas **inte** mellan sessioner (försvinner vid omladdning).
-- Strikt passfotoläge (inget barn/husdjur-läge).
+- Strikt passfotoläge för den gröna knappen; djur-läget ligger på spaken.
 - Nedräkningen har mekaniskt klickljud (Web Audio, ingen ljudfil).
