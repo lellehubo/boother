@@ -1,7 +1,7 @@
 // Passfotoautomaten — enkel app-shell-cache så gränssnittet startar offline.
 // Proxyanropen (Supabase/Gemini) rörs aldrig; bara samma-origin-GET cachas.
 // Bumpa CACHE vid varje ändring av de cachade filerna så gamla versioner rensas.
-const CACHE = "passfoto-v4";
+const CACHE = "passfoto-v5";
 const ASSETS = [
   ".",
   "index.html",

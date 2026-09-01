@@ -53,7 +53,7 @@ html, body { height: 100%; overscroll-behavior: none; }
 
 body {
   min-height: 100dvh;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: safe center;
   padding: env(safe-area-inset-top) 14px calc(env(safe-area-inset-bottom) + 22px);
   gap: 18px;
   font-family: "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
@@ -340,11 +340,18 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
   box-shadow: 0 0 0 7px #cfd2d1, 0 0 0 8px var(--steel-shadow), 0 0 0 10px rgba(0,0,0,0.35),
     inset 0 3px 8px rgba(0,0,0,0.55), 0 5px 10px rgba(0,0,0,0.5); }
 .trigger:disabled { cursor: default; filter: grayscale(0.45) brightness(0.82); }
-[data-state="idle"] .trigger { filter: saturate(1.05); }
+/* Vilande: maskinen är AV — stålknapp med I/O-symbol. Tänds grön först vid start. */
+[data-state="idle"] .trigger {
+  background:
+    radial-gradient(circle at 42% 30%, rgba(255,255,255,0.55), rgba(255,255,255,0) 42%),
+    radial-gradient(circle at 50% 46%, #757a78, #4c504e 52%, #2b2e2d 100%);
+  color: var(--teak-hi);
+}
+[data-state="idle"] .trigger-wrap::before { border-color: var(--teak-hi); }
 
 .trigger .ic { width: 40px; height: 40px; display: none;
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4)); position: relative; z-index: 1; }
-[data-state="idle"] .trigger .ic-camera { display: block; }
+[data-state="idle"] .trigger .ic-power { display: block; }
 [data-state="viewfinder"] .trigger .ic-shutter,
 [data-state="countdown"]  .trigger .ic-shutter,
 [data-state="processing"] .trigger .ic-shutter { display: block; }
@@ -400,6 +407,7 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
    FOTOREMSAN — glansigt fotopapper som glider fram
    ============================================================ */
 
+.stack { display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; }
 .strip {
   position: relative; width: min(430px, 100%); display: none; gap: 9px;
   grid-template-columns: repeat(4, 1fr); padding: 12px; border-radius: 14px;
@@ -445,14 +453,8 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
 .strip figure.failed::before { content: ""; width: 24px; height: 24px;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237a6f58' stroke-width='2' stroke-linecap='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E") center/contain no-repeat; }
 
-.compare { width: min(430px, 100%); display: none; gap: 10px; }
-[data-state="result"].has-compare .compare { display: flex; }
-.compare .col { flex: 1; }
-.compare img { width: 100%; border-radius: 8px; aspect-ratio: 35/45; object-fit: cover;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.15); }
-
 /* ============================================================
-   LJUSLÅDA — enskild bild i större vy, nedladdning här
+   LJUSLÅDA — bläddringsbar remsa i större vy, nedladdning här
    ============================================================ */
 
 .lightbox {
@@ -467,11 +469,23 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
   animation: lbIn 0.35s var(--ease);
 }
 @keyframes lbIn { from { opacity: 0; transform: scale(0.92); } }
-.lb-inner img {
-  max-width: min(86vw, 400px); max-height: 72vh; width: auto; height: auto;
-  border: 8px solid #fbf7ef; border-radius: 6px; background: #fbf7ef;
-  box-shadow: 0 28px 64px -12px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.1);
+/* Bläddringsbar remsa — svep/scrolla mellan de fyra bilderna */
+.lb-track {
+  display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+  width: min(86vw, 400px); max-height: 72vh;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  border-radius: 6px; box-shadow: 0 28px 64px -12px rgba(0,0,0,0.75);
 }
+.lb-track::-webkit-scrollbar { display: none; }
+.lb-track img {
+  scroll-snap-align: center; flex: 0 0 100%; width: 100%; height: auto;
+  max-height: 72vh; object-fit: contain; box-sizing: border-box;
+  border: 8px solid #fbf7ef; border-radius: 6px; background: #fbf7ef;
+}
+.lb-dots { display: flex; gap: 8px; }
+.lb-dots span { width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.35); transition: background .2s, transform .2s; }
+.lb-dots span.on { background: #fff; transform: scale(1.25); }
 /* Nedladdningsknapp — grön, samma familj som utlösaren */
 .lb-download {
   width: 66px; height: 66px; border-radius: 50%; border: none; cursor: pointer;
@@ -556,7 +570,7 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
 
     <div class="trigger-wrap">
       <button class="trigger" id="trigger" aria-label="Utlösare">
-        <svg class="ic ic-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h2.5L7 5.8h10L18.5 8H21a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/><circle cx="18.2" cy="10.4" r="0.7" fill="currentColor" stroke="none"/></svg>
+        <svg class="ic ic-power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3.5" x2="12" y2="12"/><path d="M7.6 6.6a7 7 0 1 0 8.8 0"/></svg>
         <svg class="ic ic-shutter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
         <svg class="ic ic-retake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 2.6 6.4"/><path d="M3 20v-5h5"/></svg>
       </button>
@@ -581,20 +595,16 @@ body[data-error="https"]  .idle-face .err-lock { display: block; }
     </svg>
   </main>
 
-  <div class="strip" id="strip"></div>
+  <div class="stack" id="stack"></div>
 
-  <div class="compare" id="compare">
-    <div class="col"><img id="cmpOriginal" alt="" /></div>
-    <div class="col"><img id="cmpResult" alt="" /></div>
-  </div>
-
-  <!-- Ljuslåda: enskild bild i större vy -->
+  <!-- Ljuslåda: bläddringsbar remsa i större vy -->
   <div class="lightbox" id="lightbox" aria-hidden="true">
     <button class="lb-close" id="lbClose" aria-label="Stäng">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
     <div class="lb-inner">
-      <img id="lbImg" alt="" />
+      <div class="lb-track" id="lbTrack"></div>
+      <div class="lb-dots" id="lbDots"></div>
       <button class="lb-download" id="lbDownload" aria-label="Ladda ner">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10M7 11l5 5 5-5M6 20h12"/></svg>
       </button>
@@ -618,17 +628,16 @@ const lever   = document.getElementById("lever");
 const leverKnob = lever.querySelector(".lever-knob");
 const lampCount = document.getElementById("lampCount");
 const flash   = document.getElementById("flash");
-const strip   = document.getElementById("strip");
-const cmpOriginal = document.getElementById("cmpOriginal");
-const cmpResult   = document.getElementById("cmpResult");
+const stack   = document.getElementById("stack");
 const lightbox    = document.getElementById("lightbox");
-const lbImg       = document.getElementById("lbImg");
+const lbTrack     = document.getElementById("lbTrack");
+const lbDots      = document.getElementById("lbDots");
 const lbClose     = document.getElementById("lbClose");
 const lbDownload  = document.getElementById("lbDownload");
 
 let stream = null;
 let busy = false;
-let currentLb = null;
+let galleryUrls = [], lbIndex = 0;
 let lastCapture = null;   // senaste selfien, återanvänds av djur-spaken
 
 function setState(s) { body.setAttribute("data-state", s); }
@@ -753,7 +762,7 @@ async function runSequence() {
   setState(STATES.PROCESSING);
   try {
     const images = await develop(dataUrl);
-    showResults(images, dataUrl);
+    showResults(images);
   } catch (err) {
     setState(STATES.VIEWFINDER);
     trigger.disabled = false;
@@ -793,32 +802,45 @@ async function develop(jpegDataUrl, mode = "passport") {
 /* ============================================================
    Resultat
    ============================================================ */
-function showResults(images, originalDataUrl) {
-  strip.innerHTML = "";
-  let ok = 0;
-  images.slice(0, 4).forEach((img, i) => {
+// Bygger en remsa (4 rutor). Varje remsa har sitt eget bildgalleri för ljuslådan.
+function buildStrip(images) {
+  const strip = document.createElement("div");
+  strip.className = "strip";
+  const urls = [];
+  images.slice(0, 4).forEach((img) => {
     const fig = document.createElement("figure");
     if (img && img.ok) {
-      ok++;
+      const idx = urls.length;
+      urls.push(img.url);
       const el = document.createElement("img");
       el.src = img.url; el.alt = "";
       fig.appendChild(el);
-      fig.addEventListener("click", () => openLightbox(img.url, i + 1));
+      fig.addEventListener("click", () => openLightbox(urls, idx));
     } else { fig.className = "failed"; }
     strip.appendChild(fig);
   });
+  return { strip, okCount: urls.length };
+}
 
-  const firstOk = images.find(im => im && im.ok);
-  if (firstOk && PROXY_URL) {
-    cmpOriginal.src = originalDataUrl; cmpResult.src = firstOk.url;
-    body.classList.add("has-compare");
-  } else { body.classList.remove("has-compare"); }
+// append=false → passfoto: nollställ stapeln. append=true → djur: lägg remsan under.
+function showResults(images, append = false) {
+  const { strip, okCount } = buildStrip(images);
 
+  if (okCount === 0) {                     // alla fyra föll
+    if (!append) setState(STATES.VIEWFINDER);
+    else setState(STATES.RESULT);
+    trigger.disabled = false;
+    body.classList.remove("develop-error"); void body.offsetWidth; body.classList.add("develop-error");
+    haptic([40, 60, 40]);
+    return;
+  }
+
+  if (!append) stack.innerHTML = "";
+  stack.appendChild(strip);
   setState(STATES.RESULT);
   trigger.disabled = false;
-  if (ok > 0) haptic(20);
-  if (ok === 0) { setState(STATES.VIEWFINDER);
-    body.classList.remove("develop-error"); void body.offsetWidth; body.classList.add("develop-error"); }
+  haptic(20);
+  if (append) strip.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 async function downloadImage(url, n) {
@@ -851,25 +873,57 @@ async function downloadImage(url, n) {
 /* ============================================================
    Ljuslåda
    ============================================================ */
-function openLightbox(url, n) {
-  currentLb = { url, n };
-  lbImg.src = url;
+function renderDots() {
+  lbDots.innerHTML = "";
+  galleryUrls.forEach((_, i) => {
+    const d = document.createElement("span");
+    if (i === lbIndex) d.className = "on";
+    lbDots.appendChild(d);
+  });
+}
+// Öppnar ljuslådan med en remsas alla bilder, startar på den man tryckte på.
+function openLightbox(urls, startIndex) {
+  galleryUrls = urls || [];
+  if (!galleryUrls.length) return;
+  lbTrack.innerHTML = "";
+  galleryUrls.forEach((url) => {
+    const im = document.createElement("img");
+    im.src = url; im.alt = "";
+    lbTrack.appendChild(im);
+  });
+  lbIndex = Math.max(0, Math.min(galleryUrls.length - 1, startIndex || 0));
+  renderDots();
   lightbox.classList.add("open");
   lightbox.setAttribute("aria-hidden", "false");
+  requestAnimationFrame(() => { lbTrack.scrollLeft = lbIndex * lbTrack.clientWidth; });
   haptic(10);
 }
 function closeLightbox() {
   lightbox.classList.remove("open");
   lightbox.setAttribute("aria-hidden", "true");
-  currentLb = null;
 }
+// Håll koll på vilken bild som är i vy när man sveper
+let lbScrollRaf = null;
+lbTrack.addEventListener("scroll", () => {
+  if (lbScrollRaf) return;
+  lbScrollRaf = requestAnimationFrame(() => {
+    lbScrollRaf = null;
+    const w = lbTrack.clientWidth || 1;
+    const idx = Math.round(lbTrack.scrollLeft / w);
+    if (idx !== lbIndex) { lbIndex = idx; renderDots(); }
+  });
+});
 lbDownload.addEventListener("click", () => {
-  if (currentLb) { haptic(15); downloadImage(currentLb.url, currentLb.n); }
+  const url = galleryUrls[lbIndex];
+  if (url) { haptic(15); downloadImage(url, lbIndex + 1); }
 });
 lbClose.addEventListener("click", closeLightbox);
 lightbox.addEventListener("click", (e) => { if (e.target === lightbox) closeLightbox(); });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && lightbox.classList.contains("open")) closeLightbox();
+  if (!lightbox.classList.contains("open")) return;
+  if (e.key === "Escape") closeLightbox();
+  else if (e.key === "ArrowRight") lbTrack.scrollBy({ left: lbTrack.clientWidth, behavior: "smooth" });
+  else if (e.key === "ArrowLeft") lbTrack.scrollBy({ left: -lbTrack.clientWidth, behavior: "smooth" });
 });
 
 /* ============================================================
@@ -900,7 +954,7 @@ async function runAnimalSequence() {
   try {
     const images = await develop(lastCapture, "animal");
     stopReel();
-    showResults(images, lastCapture);
+    showResults(images, true);
   } catch (err) {
     stopReel();
     setState(STATES.RESULT);
@@ -961,7 +1015,6 @@ trigger.addEventListener("click", () => {
   if (s === STATES.IDLE) startCamera();
   else if (s === STATES.VIEWFINDER) runSequence();
   else if (s === STATES.RESULT) {
-    body.classList.remove("has-compare");
     setState(STATES.VIEWFINDER);
   }
 });
