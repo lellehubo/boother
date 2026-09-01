@@ -1,0 +1,14 @@
+{
+  "name": "Passfotoautomaten",
+  "short_name": "Passfoto",
+  "description": "Fyra passfoton av en selfie, i en skandinavisk 60-talsautomat.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#201007",
+  "theme_color": "#5A3418",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

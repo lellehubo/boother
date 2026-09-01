@@ -1,0 +1,16 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Temporära förhandsvisningar / testartefakter
+_*.png
+_*.json
+test.jpg
+
+# Miljö (aldrig hemligheter i repot — nyckeln bor i Supabase secrets)
+.env
+.env.*
+supabase/functions/.env

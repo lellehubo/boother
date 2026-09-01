@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#1a0f08" />
+<title>Passfotoautomaten</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<style>
+/* ============================================================
+   Passfotoautomaten
+   Förfinad skandinavisk industridesign — ljuset är huvudrollen.
+   En fil, noll beroenden, offline-kapabel. Ordlöst gränssnitt.
+   ============================================================ */
+
+:root {
+  /* Teak — fem djupsteg */
+  --teak-dark:  #3E2410;
+  --teak-mid:   #7C4A22;
+  --teak:       #935A2B;
+  --teak-light: #C68A4C;
+  --teak-hi:    #E9BC85;
+
+  /* Borstad aluminium */
+  --steel:        #C3C6C5;
+  --steel-hi:     #F4F6F5;
+  --steel-shadow: #5E6261;
+  --steel-dark:   #3A3D3C;
+
+  --guide-cream:  #F0E9D8;
+  --lamp-glow:    #FBF3DE;
+  --lamp-warm:    #FFDDA6;
+
+  --green:      #2E9E4A;
+  --green-hi:   #63D583;
+  --green-dark: #12551F;
+
+  --lamp: 0;                       /* lampans intensitet 0..1 */
+  --ease: cubic-bezier(.16, 1, .3, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; overscroll-behavior: none; }
+
+body {
+  min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: env(safe-area-inset-top) 14px calc(env(safe-area-inset-bottom) + 22px);
+  gap: 18px;
+  font-family: "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
+  color: var(--guide-cream);
+  /* Rummet runt automaten — varm, dämpad atmosfär med spotlight */
+  background:
+    radial-gradient(90% 55% at 50% 30%, rgba(255,206,140,0.10), transparent 60%),
+    radial-gradient(120% 90% at 50% 44%, #241610, #0c0805 78%),
+    #080503;
+}
+
+/* Filmkorn över hela ytan */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 200; pointer-events: none;
+  opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   AUTOMATEN — teakskåp
+   ============================================================ */
+
+.booth {
+  position: relative;
+  width: min(430px, 100%);
+  border-radius: 22px;
+  padding: 18px 18px 26px;
+  isolation: isolate;
+  /* Teak: varm bas + oregelbunden ådring (SVG-turbulens) + brett plankspel + topsheen */
+  background-color: var(--teak-mid);
+  background-image:
+    radial-gradient(130% 78% at 50% 2%, rgba(255,228,180,0.24), transparent 42%),
+    linear-gradient(180deg, rgba(255,231,193,0.12), transparent 20%, rgba(20,10,4,0.30)),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='440'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.74 0.013' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='1 1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(90deg,
+      rgba(198,138,76,0.12) 0px, rgba(124,74,34,0.00) 70px,
+      rgba(46,26,12,0.26) 150px, rgba(124,74,34,0.00) 240px),
+    linear-gradient(158deg, var(--teak-light), var(--teak) 40%, var(--teak-mid) 70%, var(--teak-dark));
+  background-blend-mode: soft-light, normal, overlay, normal, normal;
+  background-size: cover, cover, 320px 440px, cover, cover;
+  box-shadow:
+    inset 0 2px 2px rgba(255,231,193,0.28),
+    inset 0 -10px 26px rgba(20,10,4,0.7),
+    inset 0 0 70px rgba(20,10,4,0.5),
+    0 2px 0 rgba(255,231,193,0.06),
+    0 30px 60px -12px rgba(0,0,0,0.75),
+    0 10px 24px rgba(0,0,0,0.5);
+  transform: translateY(26px) scale(.985);
+  opacity: 0;
+}
+body.booted .booth { animation: boothIn 1s var(--ease) forwards; }
+@keyframes boothIn { to { transform: none; opacity: 1; } }
+
+/* Vinjett i kanterna — transparent mitt så kameravyn förblir ren */
+.booth::after {
+  content: ""; position: absolute; inset: 0; border-radius: 22px;
+  pointer-events: none; z-index: 6;
+  background: radial-gradient(135% 120% at 50% 38%, transparent 56%, rgba(20,10,4,0.62));
+}
+
+/* ============================================================
+   LAMPRIBBAN — frostat opalglas i aluminiuminfattning
+   ============================================================ */
+
+.lamp {
+  position: relative; height: 38px; border-radius: 10px; margin-bottom: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #efe9da, #cdc6b4 55%, #a49c88);
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.7),
+    inset 0 -4px 8px rgba(0,0,0,0.32),
+    0 0 0 1px var(--steel-shadow),
+    0 0 0 3px rgba(0,0,0,0.25),
+    0 3px 6px rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+}
+/* Varmt sken — opacitet följer --lamp */
+.lamp::before {
+  content: ""; position: absolute; inset: -3px;
+  background:
+    radial-gradient(70% 200% at 50% -10%, #fff, var(--lamp-warm) 30%, rgba(255,221,166,0) 72%);
+  opacity: var(--lamp); transition: opacity 140ms ease;
+}
+/* Frostade lameller i glaset */
+.lamp::after {
+  content: ""; position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg,
+    rgba(255,255,255,0.12) 0 4px, rgba(0,0,0,0.05) 4px 8px);
+  mix-blend-mode: overlay;
+}
+/* Power-on-flimmer vid start */
+.lamp-boot { position: absolute; inset: -3px; opacity: 0; pointer-events: none;
+  background: radial-gradient(70% 200% at 50% -10%, #fff, var(--lamp-warm) 40%, transparent 74%); }
+body.booted .lamp-boot { animation: bootFlicker 1.5s ease-out .35s; }
+@keyframes bootFlicker {
+  0%{opacity:0;} 8%{opacity:.7;} 12%{opacity:.1;} 20%{opacity:.85;}
+  30%{opacity:.2;} 45%{opacity:.5;} 100%{opacity:0;}
+}
+/* Rött sken vid fel */
+.lamp-error { position: absolute; inset: -3px; opacity: 0; transition: opacity 160ms ease;
+  background: radial-gradient(70% 200% at 50% -10%, #ff6a4d, rgba(224,85,63,0) 72%); }
+body[data-error] .lamp-error { opacity: 0.9; }
+body.develop-error .lamp-error { animation: errBlink 1.2s ease-out; }
+@keyframes errBlink { 0%,100%{opacity:0;} 20%,60%{opacity:0.9;} }
+
+.lamp-count {
+  position: relative; z-index: 2; font-weight: 800; font-size: 21px;
+  letter-spacing: 0.4em; text-indent: 0.4em; color: #3a2410;
+  opacity: 0; transition: opacity 120ms ease; font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.45);
+}
+[data-state="countdown"] .lamp-count { opacity: 1; }
+
+/* Ljuskägla som rakar ner över panelen */
+.glow-spill {
+  position: absolute; left: 18px; right: 18px; top: 58px; height: 260px;
+  border-radius: 16px; pointer-events: none; z-index: 5;
+  background: radial-gradient(85% 65% at 50% -6%, var(--lamp-warm), transparent 66%);
+  opacity: calc(var(--lamp) * 0.55); transition: opacity 150ms ease;
+  mix-blend-mode: soft-light;
+}
+
+/* ============================================================
+   BEZEL — borstad aluminium, maskinfasad
+   ============================================================ */
+
+.bezel {
+  position: relative; z-index: 3; border-radius: 16px; padding: 11px;
+  background:
+    repeating-linear-gradient(114deg,
+      rgba(255,255,255,0.055) 0 1px, rgba(0,0,0,0.045) 1px 2.5px),
+    linear-gradient(146deg,
+      var(--steel-hi) 0%, var(--steel) 16%, #9ba09e 40%,
+      var(--steel) 58%, #dde0df 76%, var(--steel-shadow) 100%);
+  box-shadow:
+    inset 0 2px 2px rgba(255,255,255,0.85),
+    inset 0 -3px 6px rgba(0,0,0,0.5),
+    inset 0 0 0 1px rgba(0,0,0,0.18),
+    0 8px 18px rgba(0,0,0,0.5);
+}
+.bezel .screw {
+  position: absolute; width: 11px; height: 11px; border-radius: 50%; z-index: 2;
+  background: radial-gradient(circle at 34% 28%, #f2f4f3, var(--steel-shadow) 66%, #35383700);
+  box-shadow: 0 1px 1px rgba(255,255,255,0.6), inset 0 0 2px rgba(0,0,0,0.55),
+              0 0 0 1px rgba(0,0,0,0.15);
+}
+.bezel .screw::after { content: ""; position: absolute; inset: 3px 1px;
+  border-top: 1.4px solid rgba(0,0,0,0.5); transform: rotate(38deg); }
+.bezel .screw.tl { top: 7px; left: 7px; }  .bezel .screw.tr { top: 7px; right: 7px; }
+.bezel .screw.bl { bottom: 7px; left: 7px; } .bezel .screw.br { bottom: 7px; right: 7px; }
+
+.viewport {
+  position: relative; aspect-ratio: 35 / 45; border-radius: 9px; overflow: hidden;
+  background: #0a0a0c;
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.06),
+    inset 0 0 0 3px rgba(0,0,0,0.7),
+    inset 0 0 30px rgba(0,0,0,0.75);
+}
+.viewport video, .viewport canvas.frozen {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none;
+}
+.viewport video { transform: scaleX(-1); }
+
+[data-state="viewfinder"] video, [data-state="countdown"] video { display: block; }
+[data-state="processing"] canvas.frozen, [data-state="result"] canvas.frozen { display: block; }
+
+/* Vilande / fel-vy */
+.idle-face {
+  position: absolute; inset: 0; display: none;
+  flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 22px;
+  background: radial-gradient(120% 100% at 50% 32%, #1b1b20, #0a0a0c);
+  color: #6b7076;
+}
+[data-state="idle"] .idle-face { display: flex; }
+.idle-face .lens {
+  width: 66px; height: 66px; border-radius: 50%; position: relative;
+  background:
+    radial-gradient(circle at 36% 32%, #4a4e56, #17181c 62%),
+    #101013;
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,0.08),
+    inset 0 0 0 5px #26282e,
+    inset 0 0 14px rgba(0,0,0,0.9),
+    0 0 0 7px rgba(255,255,255,0.03);
+}
+.idle-face .lens::before {   /* linsens coating-reflex */
+  content: ""; position: absolute; inset: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, rgba(126,178,214,0.9), rgba(24,42,66,0.6) 55%, #060d16 78%);
+}
+.idle-face .lens::after {    /* liten specularhögdager */
+  content: ""; position: absolute; top: 18px; left: 22px; width: 10px; height: 6px;
+  border-radius: 50%; background: rgba(255,255,255,0.55); filter: blur(1px);
+}
+.idle-face .cue { width: 26px; height: 26px; color: #565b61;
+  animation: bob 1.7s ease-in-out infinite; }
+@keyframes bob { 0%,100%{transform:translateY(0);opacity:.45;} 50%{transform:translateY(5px);opacity:.9;} }
+
+.idle-face .err { display: none; width: 60px; height: 60px; color: #e8624a;
+  filter: drop-shadow(0 0 10px rgba(232,98,74,0.35)); }
+body[data-error] .idle-face .lens, body[data-error] .idle-face .cue { display: none; }
+body[data-error="camera"] .idle-face .err-cam  { display: block; }
+body[data-error="nocam"]  .idle-face .err-nocam { display: block; }
+body[data-error="https"]  .idle-face .err-lock { display: block; }
+
+/* Guiden */
+.guide {
+  position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none;
+  color: var(--guide-cream); display: none;
+  filter: drop-shadow(0 0 3px rgba(0,0,0,0.8));
+}
+[data-state="viewfinder"] .guide, [data-state="countdown"] .guide { display: block; }
+[data-state="countdown"] .guide { animation: guidePulse 1s ease-in-out infinite; }
+@keyframes guidePulse { 0%,100%{opacity:0.85;} 50%{opacity:0.35;} }
+
+/* Blixt */
+.flash { position: absolute; inset: 0; z-index: 7; background: #fff; opacity: 0; pointer-events: none; }
+.flash.fire { animation: flash 400ms ease-out; }
+@keyframes flash { 0%{opacity:0;} 7%{opacity:0.97;} 100%{opacity:0;} }
+
+/* Framkallning — svepande ljus skannlinje */
+.developing { position: absolute; inset: 0; z-index: 7; display: none; pointer-events: none; }
+[data-state="processing"] .developing { display: block; }
+.developing::before { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.28)); }
+.scanline {
+  position: absolute; left: 0; right: 0; height: 40px; top: 0;
+  background: linear-gradient(transparent, rgba(251,243,222,0.14) 46%, var(--lamp-glow) 50%,
+              rgba(251,243,222,0.14) 54%, transparent);
+  box-shadow: 0 0 18px 5px rgba(251,243,222,0.35);
+  animation: scan 1.7s cubic-bezier(.5,0,.5,1) infinite;
+}
+@keyframes scan { 0%{top:-40px;} 100%{top:100%;} }
+
+/* Präglat tillverkarmärke — hårkors i cirkel, ordlöst */
+.maker {
+  position: relative; z-index: 3; margin: 22px auto 0; width: 26px; height: 26px;
+  color: rgba(255,231,193,0.22);
+  filter: drop-shadow(0 1px 0 rgba(20,10,4,0.6));
+}
+
+/* ============================================================
+   UTLÖSARKNAPPEN — glansig emalj som speglar lampan
+   ============================================================ */
+
+.trigger-wrap { position: relative; z-index: 3; margin-top: 22px;
+  display: flex; justify-content: center; }
+.trigger-wrap::before {
+  content: ""; position: absolute; top: 50%; left: 50%; width: 100px; height: 100px;
+  border-radius: 50%; transform: translate(-50%,-50%);
+  border: 2px solid var(--green-hi); opacity: 0; pointer-events: none;
+}
+[data-state="idle"] .trigger-wrap::before { animation: halo 2s ease-out infinite; }
+@keyframes halo {
+  0%{opacity:.5; transform:translate(-50%,-50%) scale(1);}
+  100%{opacity:0; transform:translate(-50%,-50%) scale(1.55);}
+}
+
+.trigger {
+  position: relative; width: 100px; height: 100px; border-radius: 50%;
+  border: none; cursor: pointer; color: #f0fff4;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(circle at 42% 30%, rgba(255,255,255,0.7), rgba(255,255,255,0) 40%),
+    radial-gradient(circle at 50% 128%, rgba(255,221,166,0.5), transparent 55%),
+    radial-gradient(circle at 50% 46%, var(--green-hi), var(--green) 52%, var(--green-dark) 100%);
+  box-shadow:
+    0 0 0 7px #cfd2d1,
+    0 0 0 8px var(--steel-shadow),
+    0 0 0 10px rgba(0,0,0,0.35),
+    inset 0 4px 5px rgba(255,255,255,0.5),
+    inset 0 -8px 12px rgba(0,0,0,0.42),
+    0 14px 24px rgba(0,0,0,0.55),
+    0 4px 8px rgba(0,0,0,0.4);
+  transition: transform 110ms var(--ease), filter 200ms ease;
+}
+/* Varm reflex från lampan, styrd av --lamp */
+.trigger::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle at 50% 22%, rgba(255,229,180,0.8), transparent 45%);
+  opacity: calc(var(--lamp) * 0.7); transition: opacity 150ms ease; mix-blend-mode: screen;
+}
+.trigger:active { transform: translateY(4px) scale(0.97);
+  box-shadow: 0 0 0 7px #cfd2d1, 0 0 0 8px var(--steel-shadow), 0 0 0 10px rgba(0,0,0,0.35),
+    inset 0 3px 8px rgba(0,0,0,0.55), 0 5px 10px rgba(0,0,0,0.5); }
+.trigger:disabled { cursor: default; filter: grayscale(0.45) brightness(0.82); }
+[data-state="idle"] .trigger { filter: saturate(1.05); }
+
+.trigger .ic { width: 40px; height: 40px; display: none;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4)); position: relative; z-index: 1; }
+[data-state="idle"] .trigger .ic-camera { display: block; }
+[data-state="viewfinder"] .trigger .ic-shutter,
+[data-state="countdown"]  .trigger .ic-shutter,
+[data-state="processing"] .trigger .ic-shutter { display: block; }
+[data-state="result"]     .trigger .ic-retake { display: block; }
+
+/* ============================================================
+   FOTOREMSAN — glansigt fotopapper som glider fram
+   ============================================================ */
+
+.strip {
+  position: relative; width: min(430px, 100%); display: none; gap: 9px;
+  grid-template-columns: repeat(4, 1fr); padding: 12px; border-radius: 14px;
+  background:
+    linear-gradient(180deg, #f6f0e2, #e2d9c5 60%, #d0c6ae);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.75),
+    inset 0 -2px 4px rgba(0,0,0,0.12),
+    0 16px 32px -6px rgba(0,0,0,0.55), 0 6px 14px rgba(0,0,0,0.4);
+}
+[data-state="result"] .strip { display: grid; animation: stripOut 0.65s var(--ease); }
+@keyframes stripOut { from { opacity: 0; transform: translateY(-22px); } to { opacity: 1; } }
+/* Diagonal glans över papperet — får aldrig blockera klick */
+.strip::after {
+  content: ""; position: absolute; inset: 0; border-radius: 14px; pointer-events: none; z-index: 3;
+  background: linear-gradient(118deg, transparent 30%, rgba(255,255,255,0.35) 47%,
+              rgba(255,255,255,0.05) 52%, transparent 62%);
+}
+.strip figure {
+  position: relative; margin: 0; cursor: pointer; border-radius: 4px; overflow: hidden;
+  background: #b7b1a2; aspect-ratio: 35/45;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.5);
+  animation: photoIn 0.5s var(--ease) backwards;
+}
+[data-state="result"] .strip figure:nth-child(1){animation-delay:.10s;}
+[data-state="result"] .strip figure:nth-child(2){animation-delay:.18s;}
+[data-state="result"] .strip figure:nth-child(3){animation-delay:.26s;}
+[data-state="result"] .strip figure:nth-child(4){animation-delay:.34s;}
+@keyframes photoIn { from{opacity:0; transform:translateY(14px) scale(.94);} }
+.strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Förstora-symbol — tryck öppnar bilden i större vy */
+.strip figure::after {
+  content: ""; position: absolute; right: 5px; bottom: 5px; width: 22px; height: 22px;
+  border-radius: 50%; background: rgba(0,0,0,0.5)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 4H5a1 1 0 0 0-1 1v4M15 4h4a1 1 0 0 1 1 1v4M9 20H5a1 1 0 0 1-1-1v-4M15 20h4a1 1 0 0 0 1-1v-4'/%3E%3C/svg%3E")
+    center/13px no-repeat;
+  opacity: 0.9; box-shadow: 0 1px 3px rgba(0,0,0,0.4); transition: transform .15s ease;
+}
+.strip figure:active::after { transform: scale(0.85); }
+.strip figure.failed::after { display: none; }
+.strip figure.failed { display: flex; align-items: center; justify-content: center; cursor: default;
+  background: repeating-linear-gradient(45deg, #cfc7b5 0 8px, #c6bda9 8px 16px); }
+.strip figure.failed::before { content: ""; width: 24px; height: 24px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237a6f58' stroke-width='2' stroke-linecap='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3C/svg%3E") center/contain no-repeat; }
+
+.compare { width: min(430px, 100%); display: none; gap: 10px; }
+[data-state="result"].has-compare .compare { display: flex; }
+.compare .col { flex: 1; }
+.compare img { width: 100%; border-radius: 8px; aspect-ratio: 35/45; object-fit: cover;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.15); }
+
+/* ============================================================
+   LJUSLÅDA — enskild bild i större vy, nedladdning här
+   ============================================================ */
+
+.lightbox {
+  position: fixed; inset: 0; z-index: 150; display: none;
+  align-items: center; justify-content: center; padding: 26px;
+  background: rgba(10,6,3,0.9);
+  -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+}
+.lightbox.open { display: flex; }
+.lb-inner {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 22px;
+  animation: lbIn 0.35s var(--ease);
+}
+@keyframes lbIn { from { opacity: 0; transform: scale(0.92); } }
+.lb-inner img {
+  max-width: min(86vw, 400px); max-height: 72vh; width: auto; height: auto;
+  border: 8px solid #fbf7ef; border-radius: 6px; background: #fbf7ef;
+  box-shadow: 0 28px 64px -12px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.1);
+}
+/* Nedladdningsknapp — grön, samma familj som utlösaren */
+.lb-download {
+  width: 66px; height: 66px; border-radius: 50%; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; color: #f0fff4;
+  background:
+    radial-gradient(circle at 42% 30%, rgba(255,255,255,0.6), transparent 42%),
+    radial-gradient(circle at 50% 46%, var(--green-hi), var(--green) 52%, var(--green-dark) 100%);
+  box-shadow:
+    0 0 0 4px rgba(255,255,255,0.92), 0 0 0 6px var(--steel-shadow),
+    inset 0 3px 4px rgba(255,255,255,0.5), inset 0 -6px 10px rgba(0,0,0,0.4),
+    0 10px 20px rgba(0,0,0,0.55);
+  transition: transform 100ms var(--ease);
+}
+.lb-download:active { transform: translateY(3px) scale(0.97); }
+.lb-download svg { width: 30px; height: 30px; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.4)); }
+/* Stäng — stålknapp uppe till höger */
+.lb-close {
+  position: absolute; top: calc(env(safe-area-inset-top) + 16px); right: 18px;
+  width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer; color: #33110f;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, #f2f4f3, var(--steel) 55%, var(--steel-shadow));
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.85), inset 0 -2px 4px rgba(0,0,0,0.4),
+              0 4px 10px rgba(0,0,0,0.5);
+}
+.lb-close:active { transform: scale(0.95); }
+.lb-close svg { width: 20px; height: 20px; }
+
+/* ============================================================
+   Tillgänglighet — respektera reducerad rörelse
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .booth { animation: none !important; transform: none; opacity: 1; }
+  .lamp-boot, .idle-face .cue, .scanline, .guide,
+  [data-state="idle"] .trigger-wrap::before,
+  .strip, .strip figure, .lb-inner { animation: none !important; }
+}
+</style>
+</head>
+<body data-state="idle">
+
+  <main class="booth" aria-label="Passfotoautomat">
+    <div class="lamp">
+      <span class="lamp-count" id="lampCount">3</span>
+      <span class="lamp-boot"></span>
+      <span class="lamp-error"></span>
+    </div>
+    <div class="glow-spill"></div>
+
+    <div class="bezel">
+      <i class="screw tl"></i><i class="screw tr"></i>
+      <i class="screw bl"></i><i class="screw br"></i>
+
+      <div class="viewport">
+        <video id="video" playsinline autoplay muted></video>
+        <canvas class="frozen" id="frozen"></canvas>
+
+        <div class="idle-face">
+          <div class="lens"></div>
+          <svg class="cue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+          <svg class="err err-cam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2L9 4h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/><circle cx="12" cy="13" r="3.2"/><line x1="4" y1="3" x2="20" y2="21"/></svg>
+          <svg class="err err-nocam" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2L9 4h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/><line x1="8" y1="13" x2="16" y2="13"/></svg>
+          <svg class="err err-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        </div>
+
+        <svg class="guide" viewBox="0 0 350 450" preserveAspectRatio="none" aria-hidden="true">
+          <ellipse cx="175" cy="180" rx="80" ry="105" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M60 340 Q175 300 290 340" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M60 360 Q175 322 290 360" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.6"/>
+          <line x1="175" y1="120" x2="175" y2="240" stroke="currentColor" stroke-width="0.7" opacity="0.8"/>
+          <line x1="120" y1="180" x2="230" y2="180" stroke="currentColor" stroke-width="0.7" opacity="0.8"/>
+          <circle cx="175" cy="180" r="4" fill="none" stroke="currentColor" stroke-width="0.7"/>
+          <path d="M155 70 h40 M175 70 v8" stroke="currentColor" stroke-width="0.8" opacity="0.7"/>
+          <path d="M155 300 h40" stroke="currentColor" stroke-width="0.8" opacity="0.7"/>
+        </svg>
+
+        <div class="flash" id="flash"></div>
+        <div class="developing"><div class="scanline"></div></div>
+      </div>
+    </div>
+
+    <div class="trigger-wrap">
+      <button class="trigger" id="trigger" aria-label="Utlösare">
+        <svg class="ic ic-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h2.5L7 5.8h10L18.5 8H21a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.6"/><circle cx="18.2" cy="10.4" r="0.7" fill="currentColor" stroke="none"/></svg>
+        <svg class="ic ic-shutter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+        <svg class="ic ic-retake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 2.6 6.4"/><path d="M3 20v-5h5"/></svg>
+      </button>
+    </div>
+
+    <svg class="maker" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+      <circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/>
+    </svg>
+  </main>
+
+  <div class="strip" id="strip"></div>
+
+  <div class="compare" id="compare">
+    <div class="col"><img id="cmpOriginal" alt="" /></div>
+    <div class="col"><img id="cmpResult" alt="" /></div>
+  </div>
+
+  <!-- Ljuslåda: enskild bild i större vy -->
+  <div class="lightbox" id="lightbox" aria-hidden="true">
+    <button class="lb-close" id="lbClose" aria-label="Stäng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="lb-inner">
+      <img id="lbImg" alt="" />
+      <button class="lb-download" id="lbDownload" aria-label="Ladda ner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10M7 11l5 5 5-5M6 20h12"/></svg>
+      </button>
+    </div>
+  </div>
+
+<script>
+/* ============================================================
+   Konfiguration
+   ============================================================ */
+const PROXY_URL = "https://cntmgjiomjjivdngnqui.supabase.co/functions/v1/passfoto";
+
+const STATES = { IDLE:"idle", VIEWFINDER:"viewfinder", COUNTDOWN:"countdown",
+                 PROCESSING:"processing", RESULT:"result" };
+
+const body    = document.body;
+const video   = document.getElementById("video");
+const frozen  = document.getElementById("frozen");
+const trigger = document.getElementById("trigger");
+const lampCount = document.getElementById("lampCount");
+const flash   = document.getElementById("flash");
+const strip   = document.getElementById("strip");
+const cmpOriginal = document.getElementById("cmpOriginal");
+const cmpResult   = document.getElementById("cmpResult");
+const lightbox    = document.getElementById("lightbox");
+const lbImg       = document.getElementById("lbImg");
+const lbClose     = document.getElementById("lbClose");
+const lbDownload  = document.getElementById("lbDownload");
+
+let stream = null;
+let busy = false;
+let currentLb = null;
+
+function setState(s) { body.setAttribute("data-state", s); }
+function setLamp(v) { document.documentElement.style.setProperty("--lamp", String(v)); }
+function clearError() { body.removeAttribute("data-error"); body.classList.remove("develop-error"); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function haptic(ms) { if (navigator.vibrate) { try { navigator.vibrate(ms); } catch (_) {} } }
+
+/* Power-on-sekvens */
+window.addEventListener("load", () => requestAnimationFrame(() => body.classList.add("booted")));
+
+/* ============================================================
+   Ljud — mekaniskt klick + slutare (Web Audio)
+   ============================================================ */
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) { audioCtx = null; } }
+  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+}
+function tick() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = "square"; o.frequency.setValueAtTime(1100, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.15, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + 0.06);
+}
+function shutter() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  [0, 0.055].forEach((d, i) => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = "square"; o.frequency.setValueAtTime(i ? 700 : 1500, t + d);
+    g.gain.setValueAtTime(0.0001, t + d);
+    g.gain.exponentialRampToValueAtTime(0.2, t + d + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.04);
+    o.connect(g).connect(audioCtx.destination); o.start(t + d); o.stop(t + d + 0.05);
+  });
+}
+
+/* ============================================================
+   Kamera
+   ============================================================ */
+async function startCamera() {
+  ensureAudio();
+  clearError();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user", width: { ideal: 1440 }, height: { ideal: 1920 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    await video.play();
+    setState(STATES.VIEWFINDER);
+    trigger.disabled = false;
+    setLamp(0.25);
+  } catch (err) { handleCameraError(err); }
+}
+
+function handleCameraError(err) {
+  setState(STATES.IDLE);
+  setLamp(0);
+  trigger.disabled = false;
+  haptic([40, 60, 40]);
+  const name = err && err.name;
+  if (name === "NotAllowedError" || name === "SecurityError") body.setAttribute("data-error", "camera");
+  else if (name === "NotFoundError" || name === "OverconstrainedError") body.setAttribute("data-error", "nocam");
+  else if (location.protocol !== "https:" && location.hostname !== "localhost") body.setAttribute("data-error", "https");
+  else body.setAttribute("data-error", "camera");
+}
+
+/* ============================================================
+   Capture — beskär till 35:45, ingen spegling
+   ============================================================ */
+function capture() {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) return null;
+  const targetRatio = 35 / 45;
+  let sw, sh;
+  if (vw / vh > targetRatio) { sh = vh; sw = vh * targetRatio; }
+  else                       { sw = vw; sh = vw / targetRatio; }
+  const sx = (vw - sw) / 2, sy = (vh - sh) / 2;
+  frozen.width = Math.round(sw); frozen.height = Math.round(sh);
+  frozen.getContext("2d").drawImage(video, sx, sy, sw, sh, 0, 0, frozen.width, frozen.height);
+  return frozen.toDataURL("image/jpeg", 0.92);
+}
+
+/* ============================================================
+   Sekvens
+   ============================================================ */
+async function runSequence() {
+  if (busy) return;
+  busy = true; trigger.disabled = true;
+  setState(STATES.COUNTDOWN);
+
+  for (let n = 3; n >= 1; n--) {
+    lampCount.textContent = n;
+    setLamp(0.6 + (3 - n) * 0.13);
+    tick(); haptic(10);
+    await sleep(800);
+  }
+
+  setLamp(1);
+  flash.classList.remove("fire"); void flash.offsetWidth; flash.classList.add("fire");
+  shutter(); haptic(35);
+  const dataUrl = capture();
+  await sleep(180);
+  setLamp(0.25);
+
+  if (!dataUrl) { busy = false; setState(STATES.VIEWFINDER); trigger.disabled = false;
+    body.classList.add("develop-error"); return; }
+
+  setState(STATES.PROCESSING);
+  try {
+    const images = await develop(dataUrl);
+    showResults(images, dataUrl);
+  } catch (err) {
+    setState(STATES.VIEWFINDER);
+    trigger.disabled = false;
+    haptic([40, 60, 40]);
+    body.classList.remove("develop-error"); void body.offsetWidth; body.classList.add("develop-error");
+  } finally { busy = false; }
+}
+
+/* ============================================================
+   Proxy
+   ============================================================ */
+async function develop(jpegDataUrl) {
+  const base64 = jpegDataUrl.split(",")[1];
+  if (!PROXY_URL) return [{ ok:true, url:jpegDataUrl }, { ok:false }, { ok:false }, { ok:false }];
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 90000);
+  let res;
+  try {
+    res = await fetch(PROXY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ image: base64 }),
+      signal: ctrl.signal
+    });
+  } finally { clearTimeout(timer); }
+
+  if (!res.ok) { const e = new Error("proxy " + res.status); e.status = res.status; throw e; }
+  const data = await res.json();
+  const arr = Array.isArray(data.images) ? data.images : [];
+  if (!arr.length) throw new Error("empty");
+  // Funktionen returnerar kompletta data-URL:er med rätt mime.
+  return arr.map(url => url ? { ok:true, url } : { ok:false });
+}
+
+/* ============================================================
+   Resultat
+   ============================================================ */
+function showResults(images, originalDataUrl) {
+  strip.innerHTML = "";
+  let ok = 0;
+  images.slice(0, 4).forEach((img, i) => {
+    const fig = document.createElement("figure");
+    if (img && img.ok) {
+      ok++;
+      const el = document.createElement("img");
+      el.src = img.url; el.alt = "";
+      fig.appendChild(el);
+      fig.addEventListener("click", () => openLightbox(img.url, i + 1));
+    } else { fig.className = "failed"; }
+    strip.appendChild(fig);
+  });
+
+  const firstOk = images.find(im => im && im.ok);
+  if (firstOk && PROXY_URL) {
+    cmpOriginal.src = originalDataUrl; cmpResult.src = firstOk.url;
+    body.classList.add("has-compare");
+  } else { body.classList.remove("has-compare"); }
+
+  setState(STATES.RESULT);
+  trigger.disabled = false;
+  if (ok > 0) haptic(20);
+  if (ok === 0) { setState(STATES.VIEWFINDER);
+    body.classList.remove("develop-error"); void body.offsetWidth; body.classList.add("develop-error"); }
+}
+
+function downloadImage(url, n) {
+  const m = /^data:image\/([a-z0-9.+-]+)/i.exec(url);
+  const ext = m ? m[1].replace("jpeg", "jpg") : "png";
+  const a = document.createElement("a");
+  a.href = url; a.download = "passfoto-" + n + "." + ext;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ============================================================
+   Ljuslåda
+   ============================================================ */
+function openLightbox(url, n) {
+  currentLb = { url, n };
+  lbImg.src = url;
+  lightbox.classList.add("open");
+  lightbox.setAttribute("aria-hidden", "false");
+  haptic(10);
+}
+function closeLightbox() {
+  lightbox.classList.remove("open");
+  lightbox.setAttribute("aria-hidden", "true");
+  currentLb = null;
+}
+lbDownload.addEventListener("click", () => {
+  if (currentLb) { haptic(15); downloadImage(currentLb.url, currentLb.n); }
+});
+lbClose.addEventListener("click", closeLightbox);
+lightbox.addEventListener("click", (e) => { if (e.target === lightbox) closeLightbox(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && lightbox.classList.contains("open")) closeLightbox();
+});
+
+/* ============================================================
+   Knapplogik
+   ============================================================ */
+trigger.addEventListener("click", () => {
+  ensureAudio();
+  const s = body.getAttribute("data-state");
+  if (s === STATES.IDLE) startCamera();
+  else if (s === STATES.VIEWFINDER) runSequence();
+  else if (s === STATES.RESULT) {
+    body.classList.remove("has-compare");
+    setState(STATES.VIEWFINDER);
+  }
+});
+
+window.addEventListener("pagehide", () => {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+});
+</script>
+</body>
+</html>
