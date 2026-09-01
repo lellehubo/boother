@@ -1,4 +1,4 @@
-# Passfotoautomaten
+# BOOTHER
 
 En fristående webbapp som ser ut som en skandinavisk fotoautomat från 60-talet
 och gör fyra passfoton av en selfie. Statisk `index.html` på GitHub Pages + en
@@ -10,7 +10,7 @@ Supabase edge function som proxar mot Google Nano Banana Pro.
 index.html                       # Hela gränssnittet, kamera, capture, nedladdning
 sw.js                            # Service worker — app-shell offline
 manifest.json                    # PWA-manifest — spara på hemskärmen
-icon.svg / icon-180 / icon-512   # Ikoner (SVG + PNG för iOS/Android)
+icon.svg / icon-180/192/512      # Retro-kamera-ikon (SVG + PNG för iOS/Android)
 supabase/functions/passfoto/     # Proxyn: håller nyckeln, anropar Gemini
 ```
 

@@ -1,6 +1,6 @@
 {
-  "name": "Passfotoautomaten",
-  "short_name": "Passfoto",
+  "name": "BOOTHER",
+  "short_name": "BOOTHER",
   "description": "Fyra passfoton av en selfie, i en skandinavisk 60-talsautomat.",
   "start_url": ".",
   "scope": ".",
@@ -9,8 +9,10 @@
   "background_color": "#201007",
   "theme_color": "#5A3418",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
