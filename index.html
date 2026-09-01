@@ -6,7 +6,8 @@
 <meta name="theme-color" content="#1a0f08" />
 <title>Passfotoautomaten</title>
 <link rel="manifest" href="manifest.json" />
-<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon-180.png" />
 <style>
 /* ============================================================
    Passfotoautomaten
@@ -568,6 +569,13 @@ function haptic(ms) { if (navigator.vibrate) { try { navigator.vibrate(ms); } ca
 /* Power-on-sekvens */
 window.addEventListener("load", () => requestAnimationFrame(() => body.classList.add("booted")));
 
+/* Service worker — app-shell offline. Tyst om den inte stöds/registreras. */
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
 /* ============================================================
    Ljud — mekaniskt klick + slutare (Web Audio)
    ============================================================ */
@@ -740,11 +748,30 @@ function showResults(images, originalDataUrl) {
     body.classList.remove("develop-error"); void body.offsetWidth; body.classList.add("develop-error"); }
 }
 
-function downloadImage(url, n) {
+async function downloadImage(url, n) {
   const m = /^data:image\/([a-z0-9.+-]+)/i.exec(url);
   const ext = m ? m[1].replace("jpeg", "jpg") : "png";
+  const filename = "passfoto-" + n + "." + ext;
+
+  // Mobil (särskilt iOS Safari): <a download> ignoreras och bilden öppnas i
+  // stället. Dela filen via Web Share API så den kan sparas i Bilder/delas.
+  if (navigator.canShare) {
+    try {
+      const blob = await (await fetch(url)).blob();
+      const file = new File([blob], filename, { type: blob.type });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+    } catch (err) {
+      // Användaren avbröt delningen — gör inget mer.
+      if (err && err.name === "AbortError") return;
+      // Annat fel → falla tillbaka till klassisk nedladdning nedan.
+    }
+  }
+
   const a = document.createElement("a");
-  a.href = url; a.download = "passfoto-" + n + "." + ext;
+  a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
 }
 

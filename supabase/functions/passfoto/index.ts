@@ -91,7 +91,12 @@ async function generateOne(imageB64: string, variant: string): Promise<string | 
             { text: BASE_PROMPT + variant },
           ],
         }],
-        generationConfig: { imageConfig: { aspectRatio: "3:4" } },
+        // responseModalities måste anges explicit, annars kan modellen svara
+        // med text i stället för bild → generation_failed.
+        generationConfig: {
+          responseModalities: ["IMAGE"],
+          imageConfig: { aspectRatio: "3:4" },
+        },
       }),
     });
 
