@@ -89,15 +89,20 @@ async function pickAnimal(seed: number): Promise<string | null> {
 function animalPrompt(species: string): string {
   const kind = species || "ett oväntat djur (inte katt eller hund)";
   return (
-    "Skapa ett humoristiskt men proffsigt passfoto taget i studio av en PÅHITTAD, fiktiv " +
-    "antropomorf djurkaraktär i form av " + kind + ". Det ska INTE föreställa en verklig person — " +
-    "hitta på en helt ny karaktär. Använd referensbilden enbart som stilinspiration: liknande " +
-    "frisyr översatt till päls eller fjädrar, liknande hår- och ögonfärg, glasögon om sådana finns, " +
-    "och samma lugna, neutrala uttryck och 'vibe'. Karaktären sitter upprätt i ett fotobås, huvudet " +
-    "rakt framifrån, neutralt uttryck, axlarna raka, båda ögonen öppna och synliga. Jämn ljusgrå " +
-    "studiobakgrund utan struktur och utan slagskuggor. Mjuk, jämn belysning framifrån, inga hårda " +
-    "skuggor. Stående passfotoformat med huvudet centrerat och ungefär tre fjärdedelar av bildhöjden " +
-    "från hakan till hjässan. Fotorealistisk päls-/fjäderdetalj, elegant men lätt absurt. "
+    "Skapa ett proffsigt, lätt humoristiskt passfoto taget i studio av en PÅHITTAD, fiktiv " +
+    "antropomorf djurkaraktär i form av " + kind + ". Det är INTE en verklig person — det är en " +
+    "nyuppfunnen karaktär. MEN karaktären ska tydligt vara inspirerad av personen på referensbilden, " +
+    "så att en vän spontant säger 'det där är ju du, fast som djur'. Överför så många igenkännbara " +
+    "detaljer som möjligt från referensbilden till djuret: samma frisyr och hårlängd översatt till " +
+    "päls/fjädrar/man, samma hårfärg som pälsfärg, samma ögonfärg, samma hudton omtolkad som pälston, " +
+    "samma ansiktsform och proportioner (rund/smal/kantig), samma näs- och kindform i djurets drag, " +
+    "samma uttryck och 'vibe'. Behåll även kännetecken som glasögon, skägg/ansiktshår, mustasch, " +
+    "lugg, örhängen, smycken eller huvudbonad om de finns i referensen. Karaktären sitter upprätt i " +
+    "ett fotobås, huvudet rakt framifrån, neutralt uttryck, axlarna raka, båda ögonen öppna och " +
+    "synliga. Jämn ljusgrå studiobakgrund utan struktur och utan slagskuggor. Mjuk, jämn belysning " +
+    "framifrån, inga hårda skuggor. Stående passfotoformat med huvudet centrerat och ungefär tre " +
+    "fjärdedelar av bildhöjden från hakan till hjässan. Fotorealistisk päls-/fjäderdetalj, elegant " +
+    "men lätt absurt. "
   );
 }
 
