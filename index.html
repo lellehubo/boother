@@ -784,6 +784,10 @@ function showResults(images) {
   setState(STATES.RESULT);
   trigger.disabled = false;
   haptic(20);
+  // Remsan glider ut nedanför automaten — rulla ner till den så man ser att den är klar.
+  const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  requestAnimationFrame(() =>
+    strip.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" }));
 }
 
 async function downloadImage(url, n) {
@@ -895,6 +899,8 @@ trigger.addEventListener("click", () => {
   else if (s === STATES.VIEWFINDER) runSequence();
   else if (s === STATES.RESULT) {
     setState(STATES.VIEWFINDER);
+    const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
   }
 });
 
